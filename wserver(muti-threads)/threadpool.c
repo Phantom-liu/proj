@@ -171,6 +171,7 @@ void* manager(void *args) {
 			}
 		}
 	}
+	return NULL;
 }
 
 void* threadExit(ThreadPool *pool) {
