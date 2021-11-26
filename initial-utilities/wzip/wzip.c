@@ -3,6 +3,7 @@
 #include<string.h>
 
 int main(int argc, char **argv) {
+//	clock_t s = clock();
 	if (argc == 1) {
 		printf("wzip: file1 [file2 ...]\n");
 		return 1;
@@ -39,6 +40,8 @@ int main(int argc, char **argv) {
 		fwrite(&pre, 1, 1, stdout);
 		pre = tmp;
 	}
+//	clock_t e =clock();
+//	printf("\n\ntime: %d\n", e-s);
 	return 0;
 }
 
