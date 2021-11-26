@@ -24,7 +24,8 @@ typedef struct filepiece {
 int sum[MAX_FILE_NUM];
 int fd[MAX_FILE_NUM];
 struct stat buf[MAX_FILE_NUM];
-sem_t order[10];
+sem_t order[MAX_FILE_NUM];
+char *file[MAX_FILE_NUM];
 
 void* zip(void *args) {
 	filepiece *f = (filepiece*)args;
@@ -33,9 +34,9 @@ void* zip(void *args) {
 	char result[MAXSIZE];
 	int result_index = 0;
 	for (int i = f->startIndex; i <= f->endIndex; i++) {
-		char *input = mmap(0, buf[i].st_size, PROT_READ, MAP_PRIVATE, fd[i], 0);
+		char *input = file[i];
 		int bound = (i == f->endIndex) ? f->endOffset : buf[i].st_size;
-		if (start&&input[start] == input[start - 1]) {
+		if (start&&start < bound&&input[start] == input[start - 1]) {
 			while (input[start] == input[start - 1])
 				start++;
 		}
@@ -53,7 +54,6 @@ void* zip(void *args) {
 			result[result_index++] = pre;
 		}
 		start = 0;
-		munmap(input, buf[i].st_size);
 	}
 	sem_wait(&order[f->id]);
 	fwrite(result, result_index, 1, stdout);
@@ -83,6 +83,7 @@ int main(int argc, char **argv) {
 		stat(argv[i], &buf[i]);
 		sumtmp += buf[i].st_size;
 		sum[i] = sumtmp;
+		file[i] = mmap(0, buf[i].st_size, PROT_READ, MAP_SHARED, fd[i], 0);
 	}
 	int perSize = sumtmp / count;
 	//initial the piece information for each thread
@@ -126,6 +127,7 @@ int main(int argc, char **argv) {
 		pthread_join(tid[i], NULL);
 	}
 	for (int i = 1; i < argc; i++) {
+		munmap(file[i], buf[i].st_size);
 		close(fd[i]);
 	}
 	exit(0);
